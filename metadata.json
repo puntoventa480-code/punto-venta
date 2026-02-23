@@ -1,0 +1,7 @@
+{
+  "name": "GourmetPOS & Inventory",
+  "description": "Un sistema integral de punto de venta y control de inventario para negocios de alimentos, con estadísticas financieras avanzadas y reportes PDF detallados.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
