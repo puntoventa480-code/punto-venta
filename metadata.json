@@ -1,6 +1,6 @@
 {
   "name": "GourmetPOS & Inventory",
-  "description": "Un sistema integral de punto de venta y control de inventario para negocios de alimentos, con estadísticas financieras avanzadas y reportes PDF detallados.",
+  "description": "Un sistema integral de punto de venta y control de inventario para negocios de alimentos, con estadísticas financieras avanzadas, reportes PDF y notificaciones en tiempo real vía Telegram Bot.",
   "requestFramePermissions": [
     "camera"
   ]

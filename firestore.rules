@@ -1,0 +1,158 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: products
+    // Fields: id, name, categoryId, price, stock, minStock, unit, cost
+    //
+    // Collection: categories
+    // Fields: id, name, icon
+    //
+    // Collection: sales
+    // Fields: id, items, total, date, paymentMethod, userId
+    //
+    // Collection: movements
+    // Fields: id, productId, type, quantity, date, reason
+    //
+    // Collection: closures
+    // Fields: id, startTime, endTime, initialCash, totalCashSales, totalTransferSales, finalCashReal, status, productSnapshots
+    //
+    // Collection: active_closure
+    // Document ID: current
+    //
+    // Collection: roles
+    // Fields: id, name, permissions
+    //
+    // Collection: users
+    // Fields: id, username, roleId, email
+    //
+    // Collection: settings
+    // Document ID: business
+    // Fields: businessName, currency, taxRate, initialInvestment
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roleId == 'admin' ||
+          (request.auth.token.email == "pabloenrriquem7@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidProduct(data) {
+      return hasOnlyAllowedFields(['id', 'name', 'categoryId', 'price', 'stock', 'minStock', 'unit', 'cost', 'image']) &&
+             data.id is string && data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.price is number && data.price >= 0 &&
+             data.stock is number;
+    }
+
+    function isValidCategory(data) {
+      return hasOnlyAllowedFields(['id', 'name', 'icon']) &&
+             data.id is string && data.name is string && data.name.size() > 0 && data.name.size() < 50;
+    }
+
+    function isValidSale(data) {
+      return hasOnlyAllowedFields(['id', 'items', 'total', 'date', 'paymentMethod', 'userId']) &&
+             data.id is string && data.total is number && data.total >= 0 &&
+             data.items is list && data.date is number;
+    }
+
+    function isValidMovement(data) {
+      return hasOnlyAllowedFields(['id', 'productId', 'type', 'quantity', 'date', 'reason']) &&
+             data.id is string && data.productId is string &&
+             data.type in ['in', 'out'] && data.quantity is number && data.date is number;
+    }
+
+    function isValidUser(data) {
+      return hasOnlyAllowedFields(['id', 'username', 'roleId', 'email']) &&
+             data.id is string && data.username is string && data.username.size() > 0;
+    }
+
+    function isValidRole(data) {
+      return hasOnlyAllowedFields(['id', 'name', 'permissions']) &&
+             data.id is string && data.name is string && data.permissions is list;
+    }
+
+    function isValidClosure(data) {
+      return hasOnlyAllowedFields(['id', 'startTime', 'endTime', 'initialCash', 'totalCashSales', 'totalTransferSales', 'finalCashReal', 'status', 'productSnapshots', 'notes']) &&
+             data.id is string && data.startTime is number && data.status in ['open', 'closed'];
+    }
+
+    function isValidSettings(data) {
+      return hasOnlyAllowedFields(['businessName', 'currency', 'taxRate', 'initialInvestment', 'telegramConfig']) &&
+             data.businessName is string && data.businessName.size() > 0;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /products/{productId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAdmin() && isValidProduct(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /categories/{categoryId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAdmin() && isValidCategory(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /sales/{saleId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidSale(request.resource.data);
+      allow update: if isAdmin() && isValidSale(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /movements/{movementId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidMovement(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAdmin() && isValidUser(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /roles/{roleId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAdmin() && isValidRole(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /closures/{closureId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAdmin() && isValidClosure(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /active_closure/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && isValidClosure(request.resource.data);
+      allow delete: if isAuthenticated();
+    }
+
+    match /settings/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAdmin() && isValidSettings(request.resource.data);
+    }
+  }
+}

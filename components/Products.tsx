@@ -2,6 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { Plus, Search, Edit2, Trash2, Camera, X, Check, FolderPlus, RefreshCcw, Calendar, Scale } from 'lucide-react';
 import { Product, Category, ProductUnit } from '../types';
+import { firebaseService } from '../services/firebaseService';
 
 interface ProductsProps {
   products: Product[];
@@ -93,19 +94,19 @@ const Products: React.FC<ProductsProps> = ({ products, categories, setProducts, 
     }
   };
 
-  const handleCreateCategory = () => {
+  const handleCreateCategory = async () => {
     if (!newCategoryName.trim()) return;
     const newCat: Category = {
       id: Math.random().toString(36).substr(2, 9),
       name: newCategoryName
     };
-    setCategories(prev => [...prev, newCat]);
+    await firebaseService.saveCategory(newCat);
     setFormData(prev => ({ ...prev, categoryId: newCat.id }));
     setNewCategoryName('');
     setIsAddingCategory(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.categoryId) return alert("Selecciona una categoría");
 
@@ -115,13 +116,13 @@ const Products: React.FC<ProductsProps> = ({ products, categories, setProducts, 
     };
 
     if (editingId) {
-      setProducts(prev => prev.map(p => p.id === editingId ? { ...dataToSave, id: editingId } : p));
+      await firebaseService.saveProduct({ ...dataToSave, id: editingId } as Product);
     } else {
       const newProduct: Product = {
         ...dataToSave,
         id: Math.random().toString(36).substr(2, 9),
-      };
-      setProducts(prev => [...prev, newProduct]);
+      } as Product;
+      await firebaseService.saveProduct(newProduct);
       if (newProduct.stock > 0) {
         addMovement(newProduct.id, newProduct.stock, 'in', 'Carga inicial');
       }
@@ -255,7 +256,11 @@ const Products: React.FC<ProductsProps> = ({ products, categories, setProducts, 
                     </td>
                     <td className="py-4 pr-6 text-right space-x-1">
                       <button onClick={() => openEdit(p)} className="p-3 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"><Edit2 size={18} /></button>
-                      <button onClick={() => setProducts(prev => prev.filter(item => item.id !== p.id))} className="p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={18} /></button>
+                      <button onClick={async () => {
+                        if (window.confirm("¿Eliminar producto?")) {
+                          await firebaseService.deleteProduct(p.id);
+                        }
+                      }} className="p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={18} /></button>
                     </td>
                   </tr>
                 );

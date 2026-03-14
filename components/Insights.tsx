@@ -1,5 +1,6 @@
 
-import React, { useMemo } from 'react';
+import * as React from 'react';
+import { useMemo } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   Cell, PieChart, Pie, AreaChart, Area, Legend, LineChart, Line 

@@ -1,5 +1,6 @@
 
-import React, { useState, useMemo } from 'react';
+import * as React from 'react';
+import { useState, useMemo } from 'react';
 import { Search, ShoppingCart, Trash2, CreditCard, Banknote, Plus, Minus, Calendar, Power, AlertCircle, X, CheckCircle2, ArrowRight, FileText } from 'lucide-react';
 import { Product, Category, Sale, SaleItem, DayClosure } from '../types';
 

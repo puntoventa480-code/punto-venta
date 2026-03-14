@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+import * as React from 'react';
+import { useState } from 'react';
 import { ArrowUpRight, ArrowDownRight, Package, Plus, Filter } from 'lucide-react';
 import { InventoryMovement, Product } from '../types';
 

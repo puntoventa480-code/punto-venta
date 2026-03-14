@@ -1,0 +1,149 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Inventory product item",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "price": { "type": "number" },
+        "stock": { "type": "number" },
+        "minStock": { "type": "number" },
+        "unit": { "type": "string" },
+        "cost": { "type": "number" }
+      },
+      "required": ["id", "name", "categoryId", "price", "stock"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Product category",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "icon": { "type": "string" }
+      },
+      "required": ["id", "name"]
+    },
+    "Sale": {
+      "title": "Sale",
+      "description": "Sales transaction",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "items": { "type": "array" },
+        "total": { "type": "number" },
+        "date": { "type": "string" },
+        "paymentMethod": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["id", "items", "total", "date"]
+    },
+    "InventoryMovement": {
+      "title": "InventoryMovement",
+      "description": "Stock change record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "productId": { "type": "string" },
+        "type": { "type": "string" },
+        "quantity": { "type": "number" },
+        "date": { "type": "string" },
+        "reason": { "type": "string" }
+      },
+      "required": ["id", "productId", "type", "quantity", "date"]
+    },
+    "User": {
+      "title": "User",
+      "description": "Application user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "username": { "type": "string" },
+        "roleId": { "type": "string" },
+        "email": { "type": "string" }
+      },
+      "required": ["id", "username", "roleId"]
+    },
+    "Role": {
+      "title": "Role",
+      "description": "User role with permissions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "permissions": { "type": "array" }
+      },
+      "required": ["id", "name", "permissions"]
+    },
+    "FinancialSettings": {
+      "title": "FinancialSettings",
+      "description": "Business financial settings",
+      "type": "object",
+      "properties": {
+        "businessName": { "type": "string" },
+        "currency": { "type": "string" },
+        "taxRate": { "type": "number" },
+        "initialInvestment": { "type": "number" }
+      },
+      "required": ["businessName", "currency"]
+    },
+    "DayClosure": {
+      "title": "DayClosure",
+      "description": "Daily cash closure",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "startTime": { "type": "number" },
+        "endTime": { "type": "number" },
+        "initialCash": { "type": "number" },
+        "totalCashSales": { "type": "number" },
+        "totalTransferSales": { "type": "number" },
+        "finalCashReal": { "type": "number" },
+        "status": { "type": "string" },
+        "productSnapshots": { "type": "object" }
+      },
+      "required": ["id", "startTime", "initialCash", "status"]
+    }
+  },
+  "firestore": {
+    "products": {
+      "schema": "Product",
+      "description": "Collection of products"
+    },
+    "categories": {
+      "schema": "Category",
+      "description": "Collection of categories"
+    },
+    "sales": {
+      "schema": "Sale",
+      "description": "Collection of sales"
+    },
+    "movements": {
+      "schema": "InventoryMovement",
+      "description": "Collection of inventory movements"
+    },
+    "users": {
+      "schema": "User",
+      "description": "Collection of users"
+    },
+    "closures": {
+      "schema": "DayClosure",
+      "description": "Collection of day closures"
+    },
+    "active_closure": {
+      "schema": "DayClosure",
+      "description": "Single document for active closure"
+    },
+    "roles": {
+      "schema": "Role",
+      "description": "Collection of roles"
+    },
+    "settings": {
+      "schema": "FinancialSettings",
+      "description": "Single document for business settings"
+    }
+  }
+}

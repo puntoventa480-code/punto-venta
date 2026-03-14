@@ -1,7 +1,9 @@
 
 import React, { useRef, useState } from 'react';
-import { Download, Upload, FolderOpen, ShieldCheck, Database, HardDrive, RefreshCw, AlertCircle, Users, Shield, Plus, Trash2, CheckSquare, Square, UserPlus, Home, RefreshCcw, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Download, Upload, FolderOpen, ShieldCheck, Database, HardDrive, RefreshCw, AlertCircle, Users, Shield, Plus, Trash2, CheckSquare, Square, UserPlus, Home, RefreshCcw, Sparkles, CheckCircle2, Send } from 'lucide-react';
 import { Product, Category, Sale, InventoryMovement, FinancialSettings, AutoSaveConfig, Role, User, Permission } from '../types';
+import { firebaseService } from '../services/firebaseService';
+import { User as FirebaseUser } from 'firebase/auth';
 
 interface SettingsProps {
   products: Product[];
@@ -21,16 +23,18 @@ interface SettingsProps {
   setRoles: React.Dispatch<React.SetStateAction<Role[]>>;
   users: User[];
   setUsers: React.Dispatch<React.SetStateAction<User[]>>;
+  fbUser: FirebaseUser | null;
 }
 
 const Settings: React.FC<SettingsProps> = ({ 
   products, categories, sales, movements, financialSettings, setFinancialSettings,
   onImport, onFactoryReset, autoSaveConfig, setAutoSaveConfig, 
   directoryHandle, setDirectoryHandle, isSaving,
-  roles, setRoles, users, setUsers
+  roles, setRoles, users, setUsers,
+  fbUser
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [activeSubTab, setActiveSubTab] = useState<'backup' | 'users'>('backup');
+  const [activeSubTab, setActiveSubTab] = useState<'backup' | 'users' | 'telegram'>('backup');
 
   // Role Creation State
   const [newRoleName, setNewRoleName] = useState('');
@@ -129,26 +133,38 @@ const Settings: React.FC<SettingsProps> = ({
     }
   };
 
-  const createRole = () => {
+  const createRole = async () => {
     if (!newRoleName.trim()) return;
     const newRole: Role = {
       id: Math.random().toString(36).substr(2, 9),
       name: newRoleName,
       permissions: selectedPerms
     };
-    setRoles([...roles, newRole]);
+    
+    if (fbUser) {
+      await firebaseService.saveRole(newRole);
+    } else {
+      setRoles([...roles, newRole]);
+    }
+    
     setNewRoleName('');
     setSelectedPerms(['pos']);
   };
 
-  const createUser = () => {
+  const createUser = async () => {
     if (!newUsername.trim() || !selectedRoleId) return;
     const newUser: User = {
       id: Math.random().toString(36).substr(2, 9),
       username: newUsername,
       roleId: selectedRoleId
     };
-    setUsers([...users, newUser]);
+    
+    if (fbUser) {
+      await firebaseService.saveUser(newUser);
+    } else {
+      setUsers([...users, newUser]);
+    }
+    
     setNewUsername('');
   };
 
@@ -183,6 +199,12 @@ const Settings: React.FC<SettingsProps> = ({
             className={`px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${activeSubTab === 'users' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
           >
             Usuarios & Roles
+          </button>
+          <button 
+            onClick={() => setActiveSubTab('telegram')}
+            className={`px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${activeSubTab === 'telegram' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+          >
+            Telegram Bot
           </button>
         </div>
       </header>
@@ -303,6 +325,138 @@ const Settings: React.FC<SettingsProps> = ({
             </button>
           </div>
         </div>
+      ) : activeSubTab === 'telegram' ? (
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-100">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="p-4 bg-sky-50 text-sky-600 rounded-3xl">
+                <Send size={28} />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-slate-800">Conexión con Telegram</h3>
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Notificaciones en tiempo real</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Configuración del Bot</p>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-100">
+                      <span className="text-sm font-bold text-slate-600">Habilitar Notificaciones</span>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="sr-only peer" 
+                          checked={financialSettings.telegramConfig?.enabled || false} 
+                          onChange={e => setFinancialSettings(prev => ({
+                            ...prev,
+                            telegramConfig: {
+                              chatId: prev.telegramConfig?.chatId || '',
+                              enabled: e.target.checked
+                            }
+                          }))} 
+                        />
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500"></div>
+                      </label>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">API Token del Bot (Opcional)</label>
+                      <input 
+                        type="password" 
+                        placeholder="Ej: 123456789:ABCdef..." 
+                        className="w-full px-5 py-4 bg-white border-none rounded-2xl focus:ring-4 focus:ring-sky-100 font-black text-slate-700 tracking-tight"
+                        value={financialSettings.telegramConfig?.botToken || ''}
+                        onChange={e => setFinancialSettings(prev => ({
+                          ...prev,
+                          telegramConfig: {
+                            ...prev.telegramConfig!,
+                            botToken: e.target.value
+                          }
+                        }))}
+                      />
+                      <p className="text-[9px] text-slate-400 mt-2 px-1">Si se deja vacío, se usará el token configurado en el servidor.</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Chat ID de Telegram</label>
+                      <input 
+                        type="text" 
+                        placeholder="Ej: 123456789" 
+                        className="w-full px-5 py-4 bg-white border-none rounded-2xl focus:ring-4 focus:ring-sky-100 font-black text-slate-700 tracking-tight"
+                        value={financialSettings.telegramConfig?.chatId || ''}
+                        onChange={e => setFinancialSettings(prev => ({
+                          ...prev,
+                          telegramConfig: {
+                            ...prev.telegramConfig!,
+                            chatId: e.target.value
+                          }
+                        }))}
+                      />
+                    </div>
+
+                    <div className="p-4 bg-sky-50 rounded-2xl border border-sky-100">
+                      <p className="text-[10px] font-bold text-sky-700 leading-relaxed">
+                        <strong>¿Cómo obtener tu Chat ID?</strong><br />
+                        1. Busca a tu bot en Telegram.<br />
+                        2. Envía el comando <code>/start</code>.<br />
+                        3. El bot te responderá con tu Chat ID único.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
+                  <h4 className="text-sm font-black text-slate-800 uppercase tracking-tight mb-4">Estado del Bot</h4>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 p-4 bg-white rounded-2xl border border-slate-100">
+                      <div className={`w-3 h-3 rounded-full ${financialSettings.telegramConfig?.enabled ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]' : 'bg-slate-300'}`}></div>
+                      <span className="text-sm font-bold text-slate-700">
+                        {financialSettings.telegramConfig?.enabled ? 'Bot Activo' : 'Bot Desactivado'}
+                      </span>
+                    </div>
+                    
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      Cuando el bot está activo, recibirás un mensaje automático en Telegram cada vez que se complete una venta, incluyendo el total y el método de pago.
+                    </p>
+
+                    <button 
+                      onClick={async () => {
+                        if (!financialSettings.telegramConfig?.chatId) {
+                          alert("Por favor ingresa un Chat ID primero.");
+                          return;
+                        }
+                        try {
+                          const res = await fetch('/api/send-telegram', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              chatId: financialSettings.telegramConfig.chatId,
+                              botToken: financialSettings.telegramConfig.botToken,
+                              message: "🔔 ¡Prueba de conexión exitosa! GourmetPOS está conectado con Telegram."
+                            })
+                          });
+                          const data = await res.json();
+                          if (data.success) alert("Mensaje de prueba enviado.");
+                          else alert("Error: " + data.error);
+                        } catch (err) {
+                          alert("Error de conexión con el servidor.");
+                        }
+                      }}
+                      className="w-full flex items-center justify-center gap-2 bg-sky-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-sky-700 transition-all shadow-xl shadow-sky-100"
+                    >
+                      <Send size={18} /> Enviar Mensaje de Prueba
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Roles Management */}
@@ -350,7 +504,16 @@ const Settings: React.FC<SettingsProps> = ({
                       <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{r.permissions.length} permisos activos</p>
                     </div>
                     {r.id !== 'admin' && (
-                      <button onClick={() => setRoles(roles.filter(role => role.id !== r.id))} className="p-2 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
+                      <button 
+                        onClick={async () => {
+                          if (fbUser) {
+                            await firebaseService.deleteRole(r.id);
+                          } else {
+                            setRoles(roles.filter(role => role.id !== r.id));
+                          }
+                        }} 
+                        className="p-2 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                      >
                         <Trash2 size={16} />
                       </button>
                     )}
@@ -405,7 +568,17 @@ const Settings: React.FC<SettingsProps> = ({
                       </div>
                     </div>
                     {u.id !== '1' && (
-                      <button onClick={() => setUsers(users.filter(user => user.id !== u.id))} className="p-2 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
+                      <button 
+                        onClick={async () => {
+                          if (fbUser) {
+                            // We need a deleteUser in firebaseService
+                            await firebaseService.deleteUser(u.id);
+                          } else {
+                            setUsers(users.filter(user => user.id !== u.id));
+                          }
+                        }} 
+                        className="p-2 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                      >
                         <Trash2 size={16} />
                       </button>
                     )}

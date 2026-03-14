@@ -1,5 +1,6 @@
 
-import React, { useMemo, useState } from 'react';
+import * as React from 'react';
+import { useMemo, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, AreaChart, Area } from 'recharts';
 import { Download, Wallet, Users, AlertCircle, TrendingUp, Package, X, Search, ChevronRight, Calendar, Banknote, CreditCard, Box, History, DollarSign, ArrowUpRight, ArrowDownRight, Activity } from 'lucide-react';
 import { jsPDF } from 'jspdf';

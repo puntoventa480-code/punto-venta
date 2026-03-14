@@ -70,6 +70,11 @@ export interface FinancialSettings {
   businessName: string;
   initialInvestment: number;
   workerSalaryRate: number;
+  telegramConfig?: {
+    chatId: string;
+    botToken?: string;
+    enabled: boolean;
+  };
 }
 
 export interface AutoSaveConfig {
@@ -89,4 +94,5 @@ export interface User {
   id: string;
   username: string;
   roleId: string;
+  email?: string;
 }
